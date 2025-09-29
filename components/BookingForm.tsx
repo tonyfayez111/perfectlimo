@@ -2,28 +2,23 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
 import { gsap } from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import { useApp } from '@/app/providers'
 import { COMPANY_BRANDING, getBrandPhone, getWhatsAppUrl } from '@/config/branding'
+import { bookingFormSchema, type BookingFormData } from '@/lib/validations'
+import LocationPicker from './LocationPicker'
 
 gsap.registerPlugin(ScrollTrigger)
 
-interface BookingFormData {
-  name: string
-  startPoint: string
-  endPoint: string
-  tripType: '1-way' | '2-way'
-  passengers: string
-  pickupDate: string
-  pickupTime: string
-  specialRequests?: string
-}
-
 export default function BookingForm() {
   const { showMessage, setLoading } = useApp()
-  const { register, handleSubmit, formState: { errors }, reset } = useForm<BookingFormData>()
+  const { register, handleSubmit, formState: { errors }, reset, watch, setValue } = useForm<BookingFormData>({
+    resolver: zodResolver(bookingFormSchema)
+  })
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [showContactNumber, setShowContactNumber] = useState(false)
   
   const sectionRef = useRef<HTMLDivElement>(null)
   const titleRef = useRef<HTMLHeadingElement>(null)
@@ -80,6 +75,7 @@ export default function BookingForm() {
 🚗 *New Limousine Booking Request - ${COMPANY_BRANDING.name.full}*
 
 👤 *Name:* ${data.name}
+${data.contactNumber ? `📱 *Contact:* ${data.contactNumber}` : ''}
 📍 *Pick-up:* ${data.startPoint}
 📍 *Drop-off:* ${data.endPoint}
 🔄 *Trip Type:* ${data.tripType === '1-way' ? 'One Way' : 'Round Trip'}
@@ -95,14 +91,11 @@ ${data.specialRequests ? `📝 *Special Requests:* ${data.specialRequests}` : ''
       // Send to Google Sheets
       await sendToGoogleSheets(data)
 
-      // Send WhatsApp message
-      const whatsappUrl = getWhatsAppUrl(bookingDetails)
-      
       // Send Email
       await sendEmail(data, bookingDetails)
 
-      // Open WhatsApp
-      window.open(whatsappUrl, '_blank')
+      // Send WhatsApp message directly (without opening)
+      await sendWhatsAppMessage(bookingDetails, data.contactNumber)
 
       showMessage('Booking request sent successfully! We will contact you shortly.', 'success')
       reset()
@@ -116,29 +109,25 @@ ${data.specialRequests ? `📝 *Special Requests:* ${data.specialRequests}` : ''
   }
 
   const sendToGoogleSheets = async (data: BookingFormData) => {
-    // Google Apps Script Web App URL - You'll need to replace this with your actual URL
-    const GOOGLE_SCRIPT_URL = 'YOUR_GOOGLE_SCRIPT_URL_HERE'
-    
-    const formData = new FormData()
-    Object.entries(data).forEach(([key, value]) => {
-      formData.append(key, value)
-    })
-    formData.append('timestamp', new Date().toISOString())
+    try {
+      const response = await fetch('/api/booking', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data)
+      })
 
-    // For now, we'll just log the data
-    console.log('Booking data to be sent to Google Sheets:', data)
-    
-    // Uncomment and update when you have the Google Script URL
-    /*
-    const response = await fetch(GOOGLE_SCRIPT_URL, {
-      method: 'POST',
-      body: formData
-    })
-    
-    if (!response.ok) {
-      throw new Error('Failed to send to Google Sheets')
+      if (!response.ok) {
+        throw new Error('Failed to send to Google Sheets')
+      }
+
+      const result = await response.json()
+      console.log('Google Sheets response:', result)
+    } catch (error) {
+      console.error('Google Sheets error:', error)
+      throw error
     }
-    */
   }
 
   const sendEmail = async (data: BookingFormData, message: string) => {
@@ -164,6 +153,45 @@ ${data.specialRequests ? `📝 *Special Requests:* ${data.specialRequests}` : ''
     */
   }
 
+      const sendWhatsAppMessage = async (message: string, phoneNumber?: string) => {
+        try {
+          console.log('Sending WhatsApp message...')
+          console.log('Customer phone number:', phoneNumber || 'Not provided')
+          console.log('Message:', message)
+          
+          // Send to WhatsApp API (tries direct send first, falls back to URL)
+          const response = await fetch('/api/whatsapp', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+              message, 
+              phoneNumber: phoneNumber 
+            })
+          })
+          
+          if (response.ok) {
+            const result = await response.json()
+            console.log('WhatsApp API response:', result)
+            
+            if (result.sent) {
+              console.log('✅ WhatsApp message sent directly!')
+              showMessage('WhatsApp message sent successfully!', 'success')
+            } else {
+              console.log('⚠️ Direct send not available, opening WhatsApp...')
+              // Fallback: Open WhatsApp with the message
+              window.open(result.whatsappUrl, '_blank')
+              showMessage('WhatsApp opened with your message. Please send it manually.', 'info')
+            }
+          } else {
+            console.error('WhatsApp API error:', response.statusText)
+            showMessage('WhatsApp service temporarily unavailable.', 'warning')
+          }
+        } catch (error) {
+          console.error('WhatsApp error:', error)
+          showMessage('WhatsApp service error. Please try again.', 'error')
+        }
+      }
+
   // Get tomorrow's date as minimum date
   const tomorrow = new Date()
   tomorrow.setDate(tomorrow.getDate() + 1)
@@ -188,9 +216,9 @@ ${data.specialRequests ? `📝 *Special Requests:* ${data.specialRequests}` : ''
                 Full Name *
               </label>
               <input
-                {...register('name', { required: 'Name is required' })}
+                {...register('name')}
                 type="text"
-                className="input-field"
+                className={`input-field ${errors.name ? 'border-perfect-red' : ''}`}
                 placeholder="Enter your full name"
               />
               {errors.name && (
@@ -198,36 +226,70 @@ ${data.specialRequests ? `📝 *Special Requests:* ${data.specialRequests}` : ''
               )}
             </div>
 
+            {/* Contact Number */}
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <label htmlFor="contactNumber" className="block text-sm font-semibold text-perfect-gray">
+                  Contact Number (Optional)
+                </label>
+                <button
+                  type="button"
+                  onClick={() => setShowContactNumber(!showContactNumber)}
+                  className="flex items-center gap-2 text-perfect-red hover:text-perfect-dark-red transition-colors text-sm"
+                >
+                  <i className={`fas fa-${showContactNumber ? 'minus' : 'plus'} text-xs`}></i>
+                  {showContactNumber ? 'Remove' : 'Add'} Alternative Number
+                </button>
+              </div>
+              
+              {showContactNumber && (
+                <div className="relative">
+                  <div className="absolute left-3 top-1/2 transform -translate-y-1/2 text-perfect-gray">
+                    <i className="fas fa-phone"></i>
+                  </div>
+                  <input
+                    {...register('contactNumber')}
+                    type="tel"
+                    className={`input-field pl-10 ${errors.contactNumber ? 'border-perfect-red' : ''}`}
+                    placeholder="+20 123 456 7890"
+                  />
+                  {errors.contactNumber && (
+                    <p className="text-perfect-red text-sm mt-1">{errors.contactNumber.message}</p>
+                  )}
+                </div>
+              )}
+            </div>
+
             {/* Locations */}
             <div className="grid md:grid-cols-2 gap-6">
               <div>
-                <label htmlFor="startPoint" className="block text-sm font-semibold text-perfect-gray mb-2">
-                  Pick-up Location *
-                </label>
                 <input
-                  {...register('startPoint', { required: 'Pick-up location is required' })}
-                  type="text"
-                  className="input-field"
-                  placeholder="Enter pick-up address"
+                  {...register('startPoint')}
+                  type="hidden"
                 />
-                {errors.startPoint && (
-                  <p className="text-perfect-red text-sm mt-1">{errors.startPoint.message}</p>
-                )}
+                <LocationPicker
+                  value={watch('startPoint') || ''}
+                  onChange={(value) => setValue('startPoint', value, { shouldValidate: true })}
+                  placeholder="Enter pick-up address"
+                  label="Pick-up Location"
+                  error={errors.startPoint?.message}
+                  required
+                />
               </div>
 
               <div>
-                <label htmlFor="endPoint" className="block text-sm font-semibold text-perfect-gray mb-2">
-                  Drop-off Location *
-                </label>
                 <input
-                  {...register('endPoint', { required: 'Drop-off location is required' })}
-                  type="text"
-                  className="input-field"
-                  placeholder="Enter destination address"
+                  {...register('endPoint')}
+                  type="hidden"
                 />
-                {errors.endPoint && (
-                  <p className="text-perfect-red text-sm mt-1">{errors.endPoint.message}</p>
-                )}
+                <LocationPicker
+                  value={watch('endPoint') || ''}
+                  onChange={(value) => setValue('endPoint', value, { shouldValidate: true })}
+                  placeholder="Enter destination address"
+                  label="Drop-off Location"
+                  error={errors.endPoint?.message}
+                  required
+                />
               </div>
             </div>
 

@@ -8,6 +8,7 @@ interface BookingData {
   passengers: string
   pickupDate: string
   pickupTime: string
+  contactNumber?: string
   specialRequests?: string
 }
 
@@ -82,22 +83,29 @@ Perfect Company - Excellence in providing Limousine services
   }
 }
 
-// Google Sheets integration function
+// Google Sheets integration function using OAuth2
 async function sendToGoogleSheets(data: BookingData) {
-  const GOOGLE_SHEETS_API_KEY = process.env.GOOGLE_SHEETS_API_KEY || 'AIzaSyBbPEoqSqH6QFSMh0SXEwTSc7eQLQlOXuY'
-  const SPREADSHEET_ID = process.env.GOOGLE_SHEET_ID || 'your-spreadsheet-id' // You'll need to create a spreadsheet and get its ID
+  const SPREADSHEET_ID = process.env.GOOGLE_SHEET_ID || '1Zxq9grRx5tAX6x8OvxeROHmXoZdsOH9T5PkfI6f84yc'
+  const ACCESS_TOKEN = process.env.GOOGLE_ACCESS_TOKEN
   
-  if (!SPREADSHEET_ID || SPREADSHEET_ID === 'your-spreadsheet-id') {
-    console.log('Google Sheet ID not configured')
-    return
+  console.log('Google Sheet ID:', SPREADSHEET_ID)
+  console.log('Google Access Token:', ACCESS_TOKEN ? 'Present' : 'Missing')
+  console.log('Sending data to Google Sheets:', data)
+
+  if (!ACCESS_TOKEN) {
+    throw new Error('Google Access Token is required. Please set GOOGLE_ACCESS_TOKEN in your environment variables.')
   }
 
   try {
+    // First, ensure headers exist
+    await ensureHeadersExist(SPREADSHEET_ID, ACCESS_TOKEN)
+    
     // Prepare the data for Google Sheets
     const values = [
       [
         new Date().toISOString(), // Timestamp
         data.name,
+        data.contactNumber || '', // Contact Number
         data.startPoint,
         data.endPoint,
         data.tripType === '1-way' ? 'One Way' : 'Round Trip',
@@ -109,21 +117,26 @@ async function sendToGoogleSheets(data: BookingData) {
       ]
     ]
 
-    const response = await fetch(
-      `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/Sheet1!A:J:append?valueInputOption=USER_ENTERED&key=${GOOGLE_SHEETS_API_KEY}`,
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          values: values
-        })
-      }
-    )
+    const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/Sheet1!A:K:append?valueInputOption=USER_ENTERED`
+    console.log('Google Sheets URL:', url)
+    console.log('Data to send:', values)
+
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${ACCESS_TOKEN}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        values: values
+      })
+    })
+
+    console.log('Google Sheets response status:', response.status)
 
     if (!response.ok) {
       const errorData = await response.json()
+      console.error('Google Sheets error response:', errorData)
       throw new Error(`Failed to send to Google Sheets: ${errorData.error?.message || response.statusText}`)
     }
 
@@ -133,6 +146,78 @@ async function sendToGoogleSheets(data: BookingData) {
   } catch (error) {
     console.error('Google Sheets error:', error)
     throw error
+  }
+}
+
+// Function to ensure headers exist in the Google Sheet
+async function ensureHeadersExist(spreadsheetId: string, accessToken: string) {
+  const headers = [
+    'Timestamp',
+    'Name', 
+    'Contact Number',
+    'Pick-up Location',
+    'Drop-off Location',
+    'Trip Type',
+    'Passengers',
+    'Pick-up Date',
+    'Pick-up Time',
+    'Special Requests',
+    'Status'
+  ]
+
+  try {
+    // First, check if headers already exist
+    const checkUrl = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/Sheet1!A1:K1`
+    
+    const checkResponse = await fetch(checkUrl, {
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+      }
+    })
+
+    if (checkResponse.ok) {
+      const checkData = await checkResponse.json()
+      const existingHeaders = checkData.values?.[0] || []
+      
+      // Check if headers match (case-insensitive)
+      const headersMatch = headers.every((header, index) => 
+        existingHeaders[index]?.toLowerCase() === header.toLowerCase()
+      )
+      
+      if (headersMatch) {
+        console.log('✅ Headers already exist and match')
+        return
+      }
+    }
+
+    // Headers don't exist or don't match, create them
+    console.log('📝 Creating/updating headers in Google Sheet')
+    
+    const updateUrl = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/Sheet1!A1:K1?valueInputOption=USER_ENTERED`
+    
+    const updateResponse = await fetch(updateUrl, {
+      method: 'PUT',
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        values: [headers]
+      })
+    })
+
+    if (!updateResponse.ok) {
+      const errorData = await updateResponse.json()
+      console.error('Failed to create headers:', errorData)
+      throw new Error(`Failed to create headers: ${errorData.error?.message || updateResponse.statusText}`)
+    }
+
+    console.log('✅ Headers created successfully')
+    
+  } catch (error) {
+    console.error('Error ensuring headers exist:', error)
+    // Don't throw error here, just log it - the main function can still work
+    console.log('⚠️ Could not verify/create headers, but continuing with data insertion')
   }
 }
 

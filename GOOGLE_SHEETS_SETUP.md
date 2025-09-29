@@ -10,14 +10,15 @@ This guide will help you set up Google Sheets integration for the Perfect Limo E
 4. Set up the following columns in row 1:
    - A: Timestamp
    - B: Name
-   - C: Pick-up Location
-   - D: Drop-off Location
-   - E: Trip Type
-   - F: Passengers
-   - G: Pick-up Date
-   - H: Pick-up Time
-   - I: Special Requests
-   - J: Status
+   - C: Contact Number
+   - D: Pick-up Location
+   - E: Drop-off Location
+   - F: Trip Type
+   - G: Passengers
+   - H: Pick-up Date
+   - I: Pick-up Time
+   - J: Special Requests
+   - K: Status
 
 ## Step 2: Get the Spreadsheet ID
 
@@ -95,9 +96,9 @@ GOOGLE_SHEET_ID=your_actual_spreadsheet_id_here
 
 The booking data will be appended to your sheet in this format:
 
-| Timestamp            | Name     | Pick-up       | Drop-off       | Trip Type | Passengers | Date       | Time  | Special Requests  | Status |
-| -------------------- | -------- | ------------- | -------------- | --------- | ---------- | ---------- | ----- | ----------------- | ------ |
-| 2024-01-15T10:30:00Z | John Doe | Cairo Airport | Downtown Hotel | One Way   | 2          | 2024-01-20 | 14:00 | Child seat needed | New    |
+| Timestamp            | Name     | Contact Number | Pick-up       | Drop-off       | Trip Type | Passengers | Date       | Time  | Special Requests  | Status |
+| -------------------- | -------- | -------------- | ------------- | -------------- | --------- | ---------- | ---------- | ----- | ----------------- | ------ |
+| 2024-01-15T10:30:00Z | John Doe | +201234567890  | Cairo Airport | Downtown Hotel | One Way   | 2          | 2024-01-20 | 14:00 | Child seat needed | New    |
 
 ## Next Steps
 
