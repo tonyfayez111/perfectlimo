@@ -22,7 +22,7 @@ export default function LoadingScreen() {
 
   return (
     <div className="fixed inset-0 bg-red-gradient flex items-center justify-center z-50">
-      <div className="text-center text-white">
+      <div className="text-center text-white flex flex-col items-center justify-center">
         <div className="flex items-center justify-center gap-3 mb-8">
           <i className={`${COMPANY_BRANDING.assets.logo.icon} text-5xl`}></i>
           <div className="text-4xl font-bold">
@@ -30,7 +30,7 @@ export default function LoadingScreen() {
           </div>
         </div>
         
-        <div className="mb-6">
+        <div className="mb-6 mx-auto">
           <div className="w-64 h-2 bg-white bg-opacity-30 rounded-full overflow-hidden">
             <div 
               className="h-full bg-white transition-all duration-100 ease-out"
