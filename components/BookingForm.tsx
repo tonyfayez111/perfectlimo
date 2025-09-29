@@ -180,11 +180,11 @@ ${data.specialRequests ? `📝 *Special Requests:* ${data.specialRequests}` : ''
               console.log('⚠️ Direct send not available, opening WhatsApp...')
               // Fallback: Open WhatsApp with the message
               window.open(result.whatsappUrl, '_blank')
-              showMessage('WhatsApp opened with your message. Please send it manually.', 'info')
+              showMessage('WhatsApp opened with your message. Please send it manually.', 'success')
             }
           } else {
             console.error('WhatsApp API error:', response.statusText)
-            showMessage('WhatsApp service temporarily unavailable.', 'warning')
+            showMessage('WhatsApp service temporarily unavailable.', 'error')
           }
         } catch (error) {
           console.error('WhatsApp error:', error)
