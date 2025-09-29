@@ -7,12 +7,10 @@ export const bookingFormSchema = z.object({
     .regex(/^[a-zA-Z\s]+$/, 'Name can only contain letters and spaces'),
   
   startPoint: z.string()
-    .min(5, 'Pick-up location must be at least 5 characters')
-    .max(100, 'Pick-up location must be less than 1000 characters'),
+    .min(1, 'Pick-up location is required'),
   
   endPoint: z.string()
-    .min(5, 'Drop-off location must be at least 5 characters')
-    .max(100, 'Drop-off location must be less than 1000 characters'),
+    .min(1, 'Drop-off location is required'),
   
   tripType: z.enum(['1-way', '2-way'], {
     message: 'Please select a trip type'
