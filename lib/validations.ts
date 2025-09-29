@@ -8,11 +8,11 @@ export const bookingFormSchema = z.object({
   
   startPoint: z.string()
     .min(5, 'Pick-up location must be at least 5 characters')
-    .max(100, 'Pick-up location must be less than 100 characters'),
+    .max(100, 'Pick-up location must be less than 1000 characters'),
   
   endPoint: z.string()
     .min(5, 'Drop-off location must be at least 5 characters')
-    .max(100, 'Drop-off location must be less than 100 characters'),
+    .max(100, 'Drop-off location must be less than 1000 characters'),
   
   tripType: z.enum(['1-way', '2-way'], {
     message: 'Please select a trip type'

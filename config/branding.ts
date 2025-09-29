@@ -22,10 +22,10 @@ export const COMPANY_BRANDING = {
   // Contact Information
   contact: {
       phone: {
-        primary: process.env.COMPANY_PHONE_PRIMARY || "01283051333",
-        display: process.env.COMPANY_PHONE_DISPLAY || "+20 128 305 1333",
-        whatsapp: process.env.COMPANY_WHATSAPP_NUMBER || "201283051333",
-        formatted: process.env.COMPANY_PHONE_FORMATTED || "(+20) 128 305 1333"
+        primary: process.env.COMPANY_PHONE_PRIMARY || "+20 120 027 2020",
+        display: process.env.COMPANY_PHONE_DISPLAY || "+20 120 027 2020",
+        whatsapp: process.env.COMPANY_WHATSAPP_NUMBER || "201200272020",
+        formatted: process.env.COMPANY_PHONE_FORMATTED || "(+20) 120 027 2020"
       },
     email: {
       primary: "info@perfectlimoegypt.com",
@@ -54,7 +54,7 @@ export const COMPANY_BRANDING = {
   
   // Social Media & Links
   social: {
-    whatsapp: `https://wa.me/201283015333`,
+    whatsapp: `https://wa.me/+201200272020`,
     facebook: "https://facebook.com/perfectlimoegypt",
     instagram: "https://instagram.com/perfectlimoegypt",
     twitter: "https://twitter.com/perfectlimoeg",
