@@ -59,7 +59,7 @@ export default function Hero() {
 
       <div ref={heroRef} className="relative z-10 min-h-[120vh] lg:min-h-screen flex items-center">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
-          <div className="flex flex-col lg:grid lg:grid-cols-2 gap-24 lg lg:gap-12 items-center">
+          <div className="flex flex-col lg:grid lg:grid-cols-2 md:gap-20 gap-12 items-center">
             {/* Text Content */}
             <div className="text-white space-y-4 sm:space-y-6 text-center lg:text-left order-2 lg:order-1">
               <h1 ref={titleRef} className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-bold leading-tight opacity-0">
@@ -87,7 +87,7 @@ export default function Hero() {
             </div>
 
             {/* Video Scene */}
-            <div className="w-full h-64 sm:h-80 md:h-96 lg:h-[500px] relative order-1 lg:order-2">
+            <div className="w-full  sm:h-80 h-fit relative order-1 lg:order-2">
               <RealisticLimousine />
             </div>
           </div>
@@ -95,7 +95,7 @@ export default function Hero() {
       </div>
 
       {/* Scroll Indicator */}
-      <div className="absolute bottom-8 left-1/3 lg:left-[45%] mx-auto transform text-white text-center animate-bounce">
+      <div className="absolute bottom-0   w-full  mx-auto transform text-white text-center animate-bounce">
         <div className="text-sm opacity-80 mb-2">Scroll to explore</div>
         <i className="fas fa-chevron-down text-xl"></i>
       </div>
