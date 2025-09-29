@@ -98,7 +98,7 @@ export default function Services() {
           {services.map((service, index) => (
             <div
               key={index}
-              ref={el => cardsRef.current[index] = el}
+              ref={el => { cardsRef.current[index] = el }}
               className="card group cursor-pointer relative overflow-hidden"
             >
               {/* Background gradient overlay */}
