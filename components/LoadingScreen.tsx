@@ -40,7 +40,7 @@ export default function LoadingScreen() {
           <div className="text-sm mt-2 opacity-90">{progress}%</div>
         </div>
         
-        <p className="text-lg opacity-90">Preparing your ultra-realistic limousine experience...</p>
+        <p className="text-lg opacity-90">Preparing your comfort and luxury limousine experience...</p>
       </div>
     </div>
   )
