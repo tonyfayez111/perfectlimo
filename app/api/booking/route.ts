@@ -26,13 +26,24 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Here you would typically:
-    // 1. Save to database
-    // 2. Send to Google Sheets
-    // 3. Send email notifications
-    // 4. Send WhatsApp message
+    // Send to Google Sheets
+    try {
+      await sendToGoogleSheets(data)
+      console.log('Booking data sent to Google Sheets successfully')
+    } catch (error) {
+      console.error('Failed to send to Google Sheets:', error)
+      // Continue with the booking even if Google Sheets fails
+    }
 
-    // For now, we'll just return success
+    // Send email notification
+    try {
+      await sendEmail(data)
+      console.log('Email notification sent successfully')
+    } catch (error) {
+      console.error('Failed to send email:', error)
+      // Continue with the booking even if email fails
+    }
+
     console.log('Booking received:', data)
 
     // Create booking confirmation message
@@ -73,32 +84,52 @@ Perfect Company - Excellence in providing Limousine services
 
 // Google Sheets integration function
 async function sendToGoogleSheets(data: BookingData) {
-  // You'll need to set up Google Apps Script and get the web app URL
-  const GOOGLE_SCRIPT_URL = process.env.GOOGLE_SCRIPT_URL
+  const GOOGLE_SHEETS_API_KEY = process.env.GOOGLE_SHEETS_API_KEY || 'AIzaSyBbPEoqSqH6QFSMh0SXEwTSc7eQLQlOXuY'
+  const SPREADSHEET_ID = process.env.GOOGLE_SHEET_ID || 'your-spreadsheet-id' // You'll need to create a spreadsheet and get its ID
   
-  if (!GOOGLE_SCRIPT_URL) {
-    console.log('Google Script URL not configured')
+  if (!SPREADSHEET_ID || SPREADSHEET_ID === 'your-spreadsheet-id') {
+    console.log('Google Sheet ID not configured')
     return
   }
 
   try {
-    const response = await fetch(GOOGLE_SCRIPT_URL, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        ...data,
-        timestamp: new Date().toISOString(),
-        status: 'new'
-      })
-    })
+    // Prepare the data for Google Sheets
+    const values = [
+      [
+        new Date().toISOString(), // Timestamp
+        data.name,
+        data.startPoint,
+        data.endPoint,
+        data.tripType === '1-way' ? 'One Way' : 'Round Trip',
+        data.passengers,
+        data.pickupDate,
+        data.pickupTime,
+        data.specialRequests || '',
+        'New' // Status
+      ]
+    ]
+
+    const response = await fetch(
+      `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/Sheet1!A:J:append?valueInputOption=USER_ENTERED&key=${GOOGLE_SHEETS_API_KEY}`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          values: values
+        })
+      }
+    )
 
     if (!response.ok) {
-      throw new Error('Failed to send to Google Sheets')
+      const errorData = await response.json()
+      throw new Error(`Failed to send to Google Sheets: ${errorData.error?.message || response.statusText}`)
     }
 
-    console.log('Data sent to Google Sheets successfully')
+    const result = await response.json()
+    console.log('Data sent to Google Sheets successfully:', result)
+    return result
   } catch (error) {
     console.error('Google Sheets error:', error)
     throw error
