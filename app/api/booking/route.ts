@@ -85,7 +85,7 @@ Perfect Company - Excellence in providing Limousine services
 
 // Google Sheets integration function using OAuth2
 async function sendToGoogleSheets(data: BookingData) {
-  const SPREADSHEET_ID = process.env.GOOGLE_SHEET_ID || '1Zxq9grRx5tAX6x8OvxeROHmXoZdsOH9T5PkfI6f84yc'
+  const SPREADSHEET_ID = process.env.GOOGLE_SHEET_ID 
   const ACCESS_TOKEN = process.env.GOOGLE_ACCESS_TOKEN
   
   console.log('Google Sheet ID:', SPREADSHEET_ID)
